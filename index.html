@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Web Vocal Processor</title>
+
+    <style>
+        body {
+            background: #0f0f0f;
+            color: #eee;
+            font-family: system-ui, sans-serif;
+            padding: 20px;
+        }
+
+        #app {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        #topbar {
+            margin-bottom: 15px;
+        }
+
+        #power {
+            font-size: 1.1rem;
+            padding: 8px 16px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+        }
+
+        .block {
+            background: #1c1c1c;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .block h3 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            margin: 0 0 6px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+        }
+
+        .control {
+            margin: 6px 0;
+        }
+
+        label {
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .bypass {
+            font-size: 0.7rem;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+
+        <div id="topbar">
+            <button id="power">Start</button>
+            <span class="status" id="status">Idle</span>
+        </div>
+
+        <div class="grid">
+
+            <!-- INPUT -->
+            <div class="block">
+                <h3>Input</h3>
+                <div class="control">
+                    <label>Gain <span id="inGainVal">1.2</span></label>
+                    <input id="inputGain" type="range" min="0" max="2" step="0.01" value="1.2">
+                </div>
+            </div>
+
+            <!-- AUTOTUNE -->
+            <div class="block">
+                <h3>Autotune <input id="tuneBypass" type="checkbox" class="bypass"></h3>
+                <div class="control">
+                    <label>Correction <span id="tuneSpeedVal">50%</span></label>
+                    <input id="tuneSpeed" type="range" min="0" max="100" step="1" value="50">
+                </div>
+                <div class="control">
+                    <label>Mix <span id="tuneMixVal">100%</span></label>
+                    <input id="tuneMix" type="range" min="0" max="100" step="1" value="100">
+                </div>
+                <div class="status" id="pitchDisplay">Pitch: -- Hz</div>
+            </div>
+
+            <!-- EQ -->
+            <div class="block">
+                <h3>EQ <input id="eqBypass" type="checkbox" class="bypass"></h3>
+                <div class="control">
+                    <label>Low <span id="lowVal">0 dB</span></label>
+                    <input id="lowEQ" type="range" min="-24" max="24" step="1" value="0">
+                </div>
+                <div class="control">
+                    <label>Mid <span id="midVal">0 dB</span></label>
+                    <input id="midEQ" type="range" min="-24" max="24" step="1" value="0">
+                </div>
+                <div class="control">
+                    <label>High <span id="highVal">0 dB</span></label>
+                    <input id="highEQ" type="range" min="-24" max="24" step="1" value="0">
+                </div>
+            </div>
+
+            <!-- COMP -->
+            <div class="block">
+                <h3>Compressor <input id="compBypass" type="checkbox" class="bypass"></h3>
+                <div class="control">
+                    <label>Threshold <span id="threshVal">-24</span></label>
+                    <input id="threshold" type="range" min="-60" max="0" step="1" value="-24">
+                </div>
+                <div class="control">
+                    <label>Ratio <span id="ratioVal">4</span></label>
+                    <input id="ratio" type="range" min="1" max="12" step="0.5" value="4">
+                </div>
+                <div class="control">
+                    <label>Makeup <span id="makeupVal">6 dB</span></label>
+                    <input id="makeup" type="range" min="0" max="18" step="1" value="6">
+                </div>
+            </div>
+
+            <!-- DELAY -->
+            <div class="block">
+                <h3>Delay <input id="delayBypass" type="checkbox" class="bypass"></h3>
+                <div class="control">
+                    <label>Time <span id="delayTimeVal">0.25</span></label>
+                    <input id="delayTime" type="range" min="0" max="1" step="0.01" value="0.25">
+                </div>
+                <div class="control">
+                    <label>Feedback <span id="delayFbVal">30%</span></label>
+                    <input id="delayFeedback" type="range" min="0" max="95" step="1" value="30">
+                </div>
+                <div class="control">
+                    <label>Mix <span id="delayMixVal">25%</span></label>
+                    <input id="delayMix" type="range" min="0" max="100" step="1" value="25">
+                </div>
+            </div>
+
+            <!-- CHORUS -->
+            <div class="block">
+                <h3>Chorus <input id="chorusBypass" type="checkbox" class="bypass"></h3>
+                <div class="control">
+                    <label>Rate <span id="chorusRateVal">1.5 Hz</span></label>
+                    <input id="chorusRate" type="range" min="0.1" max="5" step="0.1" value="1.5">
+                </div>
+                <div class="control">
+                    <label>Depth <span id="chorusDepthVal">0.003</span></label>
+                    <input id="chorusDepth" type="range" min="0" max="0.01" step="0.0005" value="0.003">
+                </div>
+                <div class="control">
+                    <label>Mix <span id="chorusMixVal">40%</span></label>
+                    <input id="chorusMix" type="range" min="0" max="100" step="1" value="40">
+                </div>
+            </div>
+
+            <!-- REVERB -->
+            <div class="block">
+                <h3>Reverb <input id="reverbBypass" type="checkbox" class="bypass"></h3>
+                <div class="control">
+                    <label>Decay <span id="reverbDecayVal">2.5</span></label>
+                    <input id="reverbDecay" type="range" min="0.5" max="6" step="0.1" value="2.5">
+                </div>
+                <div class="control">
+                    <label>Mix <span id="reverbMixVal">20%</span></label>
+                    <input id="reverbMix" type="range" min="0" max="100" step="1" value="20">
+                </div>
+            </div>
+
+            <!-- OUTPUT -->
+            <div class="block">
+                <h3>Output</h3>
+                <div class="control">
+                    <label>Master <span id="outGainVal">0.8</span></label>
+                    <input id="outputGain" type="range" min="0" max="1" step="0.01" value="0.8">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let audioCtx, micStream, micSource;
+        let inputGain, outputGain;
+        let analyser, pitchData;
+        let smoothedFreq = 0;
+        let tuneDry, tuneWet, tuneOut, shifterA, shifterB, shifterModA, shifterModB, shifterWindowA, shifterWindowB;
+        let lowEQ, midEQ, highEQ;
+        let compressor, makeupGain;
+        let chorusDelay, chorusLFO, chorusDepth, chorusWet, chorusDry, chorusOut;
+        let delayNode, delayFeedback, delayWet, delayDry;
+        let reverb, reverbWet, reverbDry;
+        let isRunning = false;
+
+        const nodes = {};
+
+        const $ = id => document.getElementById(id);
+        $("power").onclick = () => isRunning ? stop() : start();
+
+        async function start() {
+            audioCtx = new AudioContext();
+            micStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false
+                }
+            });
+            micSource = audioCtx.createMediaStreamSource(micStream);
+
+            inputGain = audioCtx.createGain();
+            outputGain = audioCtx.createGain();
+
+            // Autotune / Shifter Init
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            pitchData = new Float32Array(analyser.fftSize);
+
+            tuneDry = audioCtx.createGain();
+            tuneWet = audioCtx.createGain();
+            tuneOut = audioCtx.createGain();
+
+            shifterA = audioCtx.createDelay(0.1);
+            shifterB = audioCtx.createDelay(0.1);
+            shifterModA = audioCtx.createOscillator(); // The LFO controlling phase
+            shifterWindowA = audioCtx.createGain();
+            shifterWindowB = audioCtx.createGain();
+
+            // LFO follows -1 to 1 sawtooth
+            shifterModA.type = "sawtooth";
+            shifterModA.frequency.value = 0;
+
+            // We use WaveShaperNodes to derive phases and windows from one LFO
+            const phaseA = audioCtx.createWaveShaper();
+            const phaseB = audioCtx.createWaveShaper();
+            const winA = audioCtx.createWaveShaper();
+            const winB = audioCtx.createWaveShaper();
+
+            // phaseA: maps [-1, 1] to [0, 1]
+            phaseA.curve = new Float32Array([0, 1]);
+            // phaseB: maps [-1, 1] to [0.5, 1, 0, 0.5] (shifted by 0.5)
+            phaseB.curve = new Float32Array([0.5, 1, 0, 0.5]);
+            // winA: maps [-1, 1] to [0, 1, 0] (triangle window)
+            winA.curve = new Float32Array([0, 1, 0]);
+            // winB: maps [-1, 1] to [1, 0, 1] (shfited triangle window)
+            winB.curve = new Float32Array([1, 0, 1]);
+
+            const depth = audioCtx.createGain();
+            depth.gain.value = 0.04; // 40ms max delay shift
+
+            shifterModA.connect(phaseA).connect(depth).connect(shifterA.delayTime);
+            shifterModA.connect(phaseB).connect(depth).connect(shifterB.delayTime);
+            shifterModA.connect(winA).connect(shifterWindowA.gain);
+            shifterModA.connect(winB).connect(shifterWindowB.gain);
+
+            shifterModA.start();
+
+
+            // Windowing (simplified crossfade)
+            // For now, let's keep it simple: just one delay line for testing pitch shift
+            // Real autotune requires precise phase vocoder or overlapping windows.
+            // I'll implement a simplified version.
+
+            lowEQ = audioCtx.createBiquadFilter();
+            midEQ = audioCtx.createBiquadFilter();
+            highEQ = audioCtx.createBiquadFilter();
+            lowEQ.type = "lowshelf"; lowEQ.frequency.value = 100;
+            midEQ.type = "peaking"; midEQ.frequency.value = 1500; midEQ.Q.value = 2.5;
+            highEQ.type = "highshelf"; highEQ.frequency.value = 5000;
+
+            compressor = audioCtx.createDynamicsCompressor();
+            makeupGain = audioCtx.createGain();
+
+            chorusDelay = audioCtx.createDelay(0.1);
+            chorusLFO = audioCtx.createOscillator();
+            chorusDepth = audioCtx.createGain();
+            chorusWet = audioCtx.createGain();
+            chorusDry = audioCtx.createGain();
+            chorusOut = audioCtx.createGain();
+            chorusLFO.connect(chorusDepth).connect(chorusDelay.delayTime);
+            chorusLFO.start();
+
+            delayNode = audioCtx.createDelay(1);
+            delayFeedback = audioCtx.createGain();
+            delayWet = audioCtx.createGain();
+            delayDry = audioCtx.createGain();
+            delayNode.connect(delayFeedback).connect(delayNode);
+
+            reverb = audioCtx.createConvolver();
+            reverb.buffer = createImpulse(audioCtx, 2.5);
+            reverbWet = audioCtx.createGain();
+            reverbDry = audioCtx.createGain();
+
+            reverbWet = audioCtx.createGain();
+            reverbDry = audioCtx.createGain();
+
+            micSource.connect(inputGain);
+            inputGain.connect(analyser);
+            inputGain.connect(tuneDry).connect(tuneOut);
+
+            inputGain.connect(shifterA).connect(shifterWindowA).connect(tuneWet);
+            inputGain.connect(shifterB).connect(shifterWindowB).connect(tuneWet);
+            tuneWet.connect(tuneOut);
+
+            tuneOut.connect(lowEQ).connect(midEQ).connect(highEQ)
+
+                .connect(compressor).connect(makeupGain);
+
+            makeupGain.connect(chorusDry).connect(chorusOut);
+            makeupGain.connect(chorusDelay).connect(chorusWet).connect(chorusOut);
+
+            chorusOut.connect(delayDry);
+            chorusOut.connect(delayNode).connect(delayWet);
+
+            delayDry.connect(reverbDry);
+            delayWet.connect(reverb);
+
+            reverb.connect(reverbWet);
+            reverbDry.connect(outputGain);
+            reverbWet.connect(outputGain);
+            outputGain.connect(audioCtx.destination);
+
+            apply();
+            bind();
+            isRunning = true;
+            $("status").textContent = "Live";
+            $("power").textContent = "Stop";
+            requestAnimationFrame(detectPitch);
+        }
+
+        function detectPitch() {
+            if (!isRunning) return;
+            analyser.getFloatTimeDomainData(pitchData);
+            const freq = autoCorrelate(pitchData, audioCtx.sampleRate);
+            if (freq !== -1) {
+                // Smoothing logic: exponential moving average
+                // alpha = 1: no smoothing, alpha -> 0: heavy smoothing
+                const alpha = 0.10;
+                smoothedFreq = smoothedFreq === 0 ? freq : smoothedFreq * (1 - alpha) + freq * alpha;
+
+                const n = 12 * (Math.log(smoothedFreq / 440) / Math.log(2)) + 69;
+                const nearest = Math.round(n);
+                const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+                const noteName = notes[nearest % 12];
+
+                $("pitchDisplay").textContent = `Pitch: ${Math.round(smoothedFreq)} Hz (${noteName})`;
+
+                if (!$("tuneBypass").checked) {
+                    const target = 440 * Math.pow(2, (nearest - 69) / 12);
+                    const ratio = target / smoothedFreq;
+                    applyShift(ratio);
+                }
+            } else {
+                $("pitchDisplay").textContent = "Pitch: -- Hz";
+                smoothedFreq = 0;
+                applyShift(1);
+            }
+            requestAnimationFrame(detectPitch);
+        }
+
+        function applyShift(ratio) {
+            const speed = +$("tuneSpeed").value / 100;
+            const shift = (ratio - 1) * speed;
+            // Increase effect: use a smaller ramp time (0.02s instead of 0.05s/0.1s)
+            // And use a deeper modulation depth if needed, but 12.5 is correct for 40ms.
+            const f = (1 - (1 + shift)) * 12.5;
+            shifterModA.frequency.setTargetAtTime(f, audioCtx.currentTime, 0.02);
+        }
+
+
+        function autoCorrelate(buf, sampleRate) {
+            const SIZE = buf.length;
+            let rms = 0;
+            for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+            rms = Math.sqrt(rms / SIZE);
+            if (rms < 0.005) return -1; // Lower threshold for sensitivity
+
+            // Find range to search: 50Hz to 2000Hz
+            const minPeriod = Math.floor(sampleRate / 2000);
+            const maxPeriod = Math.floor(sampleRate / 50);
+
+            let bestOffset = -1;
+            let maxCorrelation = -1;
+
+            // Normalized Autocorrelation
+            for (let offset = minPeriod; offset <= maxPeriod; offset++) {
+                let correlation = 0;
+                for (let i = 0; i < SIZE - offset; i++) {
+                    correlation += buf[i] * buf[i + offset];
+                }
+
+                // Normalization factor (energy of the overlapping segment)
+                let energy = 0;
+                for (let i = 0; i < SIZE - offset; i++) {
+                    energy += buf[i + offset] * buf[i + offset];
+                }
+
+                const normalizedCorr = energy > 0 ? correlation / Math.sqrt(energy * rms * rms * SIZE) : 0;
+
+                if (normalizedCorr > maxCorrelation) {
+                    maxCorrelation = normalizedCorr;
+                    bestOffset = offset;
+                }
+            }
+
+            // We need a clear peak to trust the result
+            if (maxCorrelation > 0.8) {
+                // Parabolic interpolation for better precision
+                // Only if we have space for neighbors
+                if (bestOffset > minPeriod && bestOffset < maxPeriod) {
+                    const getCorr = (off) => {
+                        let c = 0;
+                        for (let i = 0; i < SIZE - off; i++) c += buf[i] * buf[i + off];
+                        return c;
+                    };
+                    const y0 = getCorr(bestOffset - 1);
+                    const y1 = getCorr(bestOffset);
+                    const y2 = getCorr(bestOffset + 1);
+                    const a = (y0 + y2 - 2 * y1) / 2;
+                    const b = (y2 - y0) / 2;
+                    if (a !== 0) {
+                        return sampleRate / (bestOffset - b / (2 * a));
+                    }
+                }
+                return sampleRate / bestOffset;
+            }
+            return -1;
+        }
+
+        const ramp = (param, val) => {
+            if (audioCtx) {
+                param.setTargetAtTime(val, audioCtx.currentTime, 0.05);
+            }
+        };
+
+        function stop() {
+            micStream.getTracks().forEach(t => t.stop());
+            audioCtx.close();
+            isRunning = false;
+            $("status").textContent = "Stopped";
+            $("power").textContent = "Start";
+        }
+
+        function apply() {
+            inputGain.gain.value = +$("inputGain").value;
+            outputGain.gain.value = +$("outputGain").value;
+            lowEQ.gain.value = +$("lowEQ").value;
+            midEQ.gain.value = +$("midEQ").value;
+            highEQ.gain.value = +$("highEQ").value;
+            compressor.threshold.value = +$("threshold").value;
+            compressor.ratio.value = +$("ratio").value;
+            makeupGain.gain.value = db(+$("makeup").value);
+            delayNode.delayTime.value = +$("delayTime").value;
+            delayFeedback.gain.value = +$("delayFeedback").value / 100;
+            setTuneMix();
+            setChorusMix();
+            setDelayMix();
+            setReverbMix();
+        }
+
+        function bind() {
+            const updateLabel = (id, val, unit = "") => {
+                const el = $(id + "Val");
+                if (el) el.textContent = val + (unit ? " " + unit : "");
+            };
+
+            $("inputGain").oninput = e => {
+                const v = +e.target.value;
+                ramp(inputGain.gain, v);
+                updateLabel("inGain", v.toFixed(2));
+            };
+
+            $("outputGain").oninput = e => {
+                const v = +e.target.value;
+                ramp(outputGain.gain, v);
+                updateLabel("outGain", v.toFixed(2));
+            };
+
+            $("lowEQ").oninput = e => {
+                const v = +e.target.value;
+                if (!$("eqBypass").checked) ramp(lowEQ.gain, v);
+                updateLabel("low", v, "dB");
+            };
+
+            $("midEQ").oninput = e => {
+                const v = +e.target.value;
+                if (!$("eqBypass").checked) ramp(midEQ.gain, v);
+                updateLabel("mid", v, "dB");
+            };
+
+            $("highEQ").oninput = e => {
+                const v = +e.target.value;
+                if (!$("eqBypass").checked) ramp(highEQ.gain, v);
+                updateLabel("high", v, "dB");
+            };
+
+            $("threshold").oninput = e => {
+                const v = +e.target.value;
+                if (!$("compBypass").checked) ramp(compressor.threshold, v);
+                updateLabel("thresh", v);
+            };
+
+            $("ratio").oninput = e => {
+                const v = +e.target.value;
+                if (!$("compBypass").checked) ramp(compressor.ratio, v);
+                updateLabel("ratio", v);
+            };
+
+            $("makeup").oninput = e => {
+                const v = +e.target.value;
+                ramp(makeupGain.gain, db(v));
+                updateLabel("makeup", v, "dB");
+            };
+
+            $("delayTime").oninput = e => {
+                const v = +e.target.value;
+                ramp(delayNode.delayTime, v);
+                updateLabel("delayTime", v.toFixed(2));
+            };
+
+            $("delayFeedback").oninput = e => {
+                const v = +e.target.value;
+                ramp(delayFeedback.gain, v / 100);
+                updateLabel("delayFb", v, "%");
+            };
+
+            $("delayMix").oninput = e => {
+                setDelayMix();
+                updateLabel("delayMix", e.target.value, "%");
+            };
+
+            $("reverbMix").oninput = e => {
+                setReverbMix();
+                updateLabel("reverbMix", e.target.value, "%");
+            };
+
+            $("reverbDecay").oninput = e => {
+                const v = +e.target.value;
+                reverb.buffer = createImpulse(audioCtx, v);
+                updateLabel("reverbDecay", v.toFixed(1));
+            };
+
+            $("eqBypass").oninput = () => {
+                const b = $("eqBypass").checked;
+                ramp(lowEQ.gain, b ? 0 : +$("lowEQ").value);
+                ramp(midEQ.gain, b ? 0 : +$("midEQ").value);
+                ramp(highEQ.gain, b ? 0 : +$("highEQ").value);
+            };
+
+            $("compBypass").oninput = () => {
+                const b = $("compBypass").checked;
+                ramp(compressor.ratio, b ? 1 : +$("ratio").value);
+                ramp(compressor.threshold, b ? 0 : +$("threshold").value);
+            };
+
+            $("delayBypass").oninput = () => setDelayMix();
+            $("reverbBypass").oninput = () => setReverbMix();
+
+            $("tuneSpeed").oninput = e => updateLabel("tuneSpeed", e.target.value, "%");
+            $("tuneMix").oninput = e => {
+                setTuneMix();
+                updateLabel("tuneMix", e.target.value, "%");
+            };
+            $("tuneBypass").oninput = () => setTuneMix();
+
+            $("chorusRate").oninput = e => {
+                const v = +e.target.value;
+                if (audioCtx) ramp(chorusLFO.frequency, v);
+                updateLabel("chorusRate", v.toFixed(1), "Hz");
+            };
+
+            $("chorusDepth").oninput = e => {
+                const v = +e.target.value;
+                if (audioCtx) ramp(chorusDepth.gain, v);
+                updateLabel("chorusDepth", v.toFixed(4));
+            };
+
+            $("chorusMix").oninput = e => {
+                setChorusMix();
+                updateLabel("chorusMix", e.target.value, "%");
+            };
+
+            $("chorusBypass").oninput = () => setChorusMix();
+        }
+
+        function setChorusMix() {
+            const b = $("chorusBypass").checked;
+            const w = b ? 0 : +$("chorusMix").value / 100;
+            ramp(chorusWet.gain, w);
+            ramp(chorusDry.gain, 1 - w);
+        }
+
+        function setTuneMix() {
+            const b = $("tuneBypass").checked;
+            const w = b ? 0 : +$("tuneMix").value / 100;
+            ramp(tuneWet.gain, w);
+            ramp(tuneDry.gain, 1 - w);
+        }
+
+        function setDelayMix() {
+            const b = $("delayBypass").checked;
+            const w = b ? 0 : +$("delayMix").value / 100;
+            ramp(delayWet.gain, w);
+            ramp(delayDry.gain, 1 - w);
+        }
+
+        function setReverbMix() {
+            const b = $("reverbBypass").checked;
+            const w = b ? 0 : +$("reverbMix").value / 100;
+            ramp(reverbWet.gain, w);
+            ramp(reverbDry.gain, 1 - w);
+        }
+
+        function db(d) { return Math.pow(10, d / 20); }
+
+        function createImpulse(ctx, decay) {
+            const len = ctx.sampleRate * decay;
+            const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+            for (let c = 0; c < 2; c++) {
+                const d = buf.getChannelData(c);
+                for (let i = 0; i < len; i++)d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+            }
+            return buf;
+        }
+    </script>
+</body>
+
+</html>
